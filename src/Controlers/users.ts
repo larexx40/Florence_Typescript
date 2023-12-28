@@ -26,8 +26,6 @@ export const addUser = async (req: Request, res: Response): Promise<void> => {
       // Construct a meaningful error response
       let newError = errors.array();
       //return only the msg and path from the error
-    
-      // console.log(newError);
       console.log(newError);      
       const errorResponse = newError.map(error => ({
         // field: error.path,
@@ -38,7 +36,9 @@ export const addUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const newUser = new User(req.body);
+    const { name, email, phoneno, password, username, dob, address, businessName } = req.body;
+    const user : IUser = { name, email, phoneno, password, username, dob, address, businessName };
+    const newUser = new User(user);
     const savedUser: IUser = await newUser.save();
     res.status(201).json(savedUser);
   } catch (error) {
