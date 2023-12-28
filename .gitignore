@@ -4,3 +4,5 @@ node_modules/
 # Ignore compiled files
 *.class
 *.pyc
+dist/
+.env
