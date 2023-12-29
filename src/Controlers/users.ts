@@ -1,8 +1,12 @@
 import { validationResult, body, check } from 'express-validator';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import User, { IUserDocument } from '../Models/users';
 import {IUser} from '../Models/types';
 import {addUserValidation,updateUserValidation,deleteUserValidation} from '../Validations/userValidation';
+import { OTPExpiryTime, generateVerificationOTP, hashPassword } from '../Utils/utils';
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 export const addUser = async (req: Request, res: Response): Promise<void> => {
   try {    
@@ -132,3 +136,25 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+//signup
+export const signup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { name, email, phoneno, username, dob, address, businessName } = req.body;
+  const verification_token : number = generateVerificationOTP(); 
+  //current time + 5 mins
+  const verification_token_time : Date = new Date(Date.now() + OTPExpiryTime);
+  const password =  await hashPassword(req.body.password);
+
+
+  const user : IUser = { name, email, phoneno, password, username, dob, address, businessName, verification_token, verification_token_time };
+  const newUser = new User(user);
+  const savedUser: IUser = await newUser.save();
+}
+//verifyEmailToken
+//resend verifyemailToken
+//login
+//resetPasswordToken
+//verifyResetPasswordToken
+//resetPassword
+//profileDetails
+//updatePhoneno
+//updateProfile

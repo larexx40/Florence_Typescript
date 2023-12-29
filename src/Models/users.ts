@@ -68,6 +68,11 @@ const userSchema = new Schema <IUserDocument> ({
     enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED', 'BANNED'],
     default: 'ACTIVE',
   },
+  email_verified: { type: Boolean, required: true, default: false },
+  verification_token: { type: String, required: true },
+  verification_token_time: { type: Date, required: true },
+  reset_password_token: { type: String, required: false },
+  reset_password_token_time: { type: Date, required: false },
 },{ timestamps: true } // Add timestamps (createdAt, updatedAt) to the documents
 );
 
