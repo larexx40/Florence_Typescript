@@ -2,6 +2,7 @@
 type userRole = 'Super Admin'| 'Admin' | 'User' | 'Sales Rep' | 'Reseller';
 const statuses = ["ACTIVE", "INACTIVE", "SUSPENDED", "DELETED", "BANNED"] as const;
 export interface IUser {
+    [x: string]: any;
     name: string;
     username: string;
     email: string;

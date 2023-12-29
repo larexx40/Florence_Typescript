@@ -6,6 +6,13 @@ import { IUser } from './types';
 interface IUserDocument extends IUser, Document {}
 // Define the user schema
 const userSchema = new Schema <IUserDocument> ({
+  name: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'Name cannot exceed 50 characters'],
+    minlength: [3, 'Name must be at least 3 characters long'],
+    lowercase: true,
+  },
   username: {
     type: String,
     required: [true, 'Username is required'],

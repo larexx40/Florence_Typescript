@@ -5,6 +5,7 @@ import {IUser} from '../Models/types';
 import {addUserValidation,updateUserValidation,deleteUserValidation} from '../Validations/userValidation';
 import { OTPExpiryTime, generateVerificationOTP, hashPassword } from '../Utils/utils';
 import dotenv from 'dotenv'
+import { signJwt } from '../Utils/jwt';
 
 dotenv.config()
 
@@ -138,16 +139,39 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 };
 //signup
 export const signup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if(req.body == '' || req.body == null || !req.body || Object.keys(req.body).length === 0) {
+    res.status(400).json({ status: false, message: "Request body is required" });
+    return;
+  }
+
   const { name, email, phoneno, username, dob, address, businessName } = req.body;
+  if(!name || !email || !phoneno || !req.body.password) {
+    res.status(400).json({ status: false, message: "Pass all required fields" });
+    return;
+  }
   const verification_token : number = generateVerificationOTP(); 
   //current time + 5 mins
   const verification_token_time : Date = new Date(Date.now() + OTPExpiryTime);
   const password =  await hashPassword(req.body.password);
 
+  try {
+    const user : IUser = { name, email, phoneno, password, username, dob, address, businessName, verification_token, verification_token_time };
+    const newUser = new User(user);
+    let savedUser: IUser = await newUser.save();
+    const payload = {
+      email: savedUser.email,
+      userid: savedUser._id,
+      role: savedUser.role, 
+    }
+    const authToken = signJwt(payload, '1h');
+    res.status(201).json({ status: true, message: 'User created successfully', data: savedUser, authToken });
+  } catch (error) {
+    res.status(500).json({ status: false, message: 'Internal server error' });
+    console.log(error);
+    
+  }
 
-  const user : IUser = { name, email, phoneno, password, username, dob, address, businessName, verification_token, verification_token_time };
-  const newUser = new User(user);
-  const savedUser: IUser = await newUser.save();
+ 
 }
 //verifyEmailToken
 //resend verifyemailToken
