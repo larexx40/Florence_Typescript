@@ -174,6 +174,41 @@ export const signup = async (req: Request, res: Response, next: NextFunction): P
  
 }
 //verifyEmailToken
+export const verifyEmailToken = async (req: Request, res: Response): Promise<void> => {
+  if(!req.body || Object.keys(req.body).length === 0) {
+    res.status(400).json({ status: false, message: "Request body is required" });
+    return;
+  }
+  const { email, verification_token } = req.body;
+  if(!email || !verification_token) {
+    res.status(400).json({ status: false, message: "Pass all required fields" });
+    return;
+  }
+  const user: IUserDocument | null = await User.findOne({ email });
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+  //compare verivication token with db
+  if(user.verification_token !== verification_token) {
+    res.status(401).json({ error: 'Invalid verification token' });
+    return;
+  }
+  //check if token is expired
+
+  if(user?.verification_token_time && user.verification_token_time < new Date()) {
+    res.status(401).json({ error: 'Verification token expired' });
+    return;
+  }
+  //update user email_verified to true
+  user.email_verified = true;
+  user.verification_token = null;
+  user.verification_token_time = '';
+  await user.save();
+
+  res.status(200).json({ status: true, message: 'Email verified successfully' });
+
+}
 //resend verifyemailToken
 //login
 //resetPasswordToken

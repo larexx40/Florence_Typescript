@@ -16,8 +16,8 @@ export interface IUser {
     businessName: string;
     status?: typeof statuses[number];
     email_verified?: boolean;
-    verification_token?: number;
-    verification_token_time?: Date;
+    verification_token?: number | null | '';
+    verification_token_time?: Date | null | '';
     reset_password_token?: string;
     reset_password_token_time?: Date;
     
