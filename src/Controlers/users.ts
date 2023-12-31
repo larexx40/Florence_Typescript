@@ -6,6 +6,8 @@ import {addUserValidation,updateUserValidation,deleteUserValidation} from '../Va
 import { OTPExpiryTime, generateVerificationOTP, hashPassword } from '../Utils/utils';
 import dotenv from 'dotenv'
 import { signJwt } from '../Utils/jwt';
+import {EmailOptions} from '../Types/types';
+import { sendEmailSG } from '../Utils/sendgrid';
 
 dotenv.config()
 
@@ -164,6 +166,19 @@ export const signup = async (req: Request, res: Response, next: NextFunction): P
       role: savedUser.role, 
     }
     const authToken = signJwt(payload, '1h');
+    let emailHtml = `<h1>Your OTP is ${savedUser.verification_token}</h1>`;
+    const text = `Your OTP is ${savedUser.verification_token}`
+    const subject= "OTP Verification";
+    const emailOptions : EmailOptions = {
+      to: savedUser.email,
+      subject,
+      text,
+      html: emailHtml
+    }
+
+    const {ACTIVE_MAIL_SYSTEM} = process.env;
+
+    const sendOTPEmail = await sendEmailSG(emailOptions);
     res.status(201).json({ status: true, message: 'User created successfully', data: savedUser, authToken });
   } catch (error) {
     res.status(500).json({ status: false, message: 'Internal server error' });
