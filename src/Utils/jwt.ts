@@ -25,4 +25,4 @@ export const verifyJwt = (token: string) => {
       console.error('Error verifying JWT:', error);
       throw new Error('JWT verification failed');
     }
-  };
+};

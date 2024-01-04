@@ -11,7 +11,7 @@ export interface IUser {
     dob?: Date;
     address: string;
     balance?: number;
-    role?: userRole;
+    role: userRole;
     toBalance?: number;
     businessName: string;
     status?: typeof statuses[number];

@@ -4,3 +4,11 @@ export interface EmailOptions {
     text: string;
     html?: string;
 }
+
+export interface AuthTokenPayload {
+    exp: any;
+    userid: string;
+    email: string;
+    role: string; 
+}
+
