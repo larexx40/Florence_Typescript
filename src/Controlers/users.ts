@@ -337,7 +337,7 @@ export const resendEmailToken = async (
   if (!req.user) {
     res
       .status(400)
-      .json({ status: false, message: "Pass all required fields" });
+      .json({ status: false, message: "User not authenticated" });
     return;
   }
   const email = req.user.email;
@@ -522,7 +522,6 @@ export const resetPasswordToken = async (
 }
 //forgetPassword
 export const forgetPassword = async (req: Request, res: Response): Promise<void> => {
-
   if (!req.body || Object.keys(req.body).length === 0) {
     res
       .status(400)
@@ -565,16 +564,39 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
       html: emailHtml,
     };
     const sendOTPEmail = await sendEmailSG(emailOptions);
+    if(!sendOTPEmail) {
+      res.status(400).json({ status: false, message: "Unable to send OTP via email" });
+      return;
+    }
 
     res.status(200).json({ status: true, message: "OTP sent to your email" });
     
   } catch (error) {
+    console.log(error);
+    res.status(500).json({ status: false, message: "Internal server error" });
     
   }
 
   
 }
-//resetPassword
 //profileDetails
+export const userProfile = async (req: Request, res: Response): Promise<void> => {
+    if(!req.user){
+        res.status(400).json({ status: false, message: "User not authenticated" });
+        return;
+    }
+    const email = req.user.email;
+    const user = await getUser({email});
+
+    if(!user) {
+        res.status(400).json({ status: false, message: "User not found" });
+        return;
+    }
+    //unset password from user
+    user.password = '';
+    res.status(200).json({ status: true, message: "User profile fetched", data: user });
+
+
+}
 //updatePhoneno
 //updateProfile

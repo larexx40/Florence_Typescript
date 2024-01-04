@@ -13,19 +13,20 @@ let mailFrom: string = EMAIL_FROM? EMAIL_FROM : 'no-reply@everything.florence..c
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Create a function to send an email
-export const sendEmailSG = async (options: EmailOptions): Promise<void> =>{
-    const { to, subject, text, html } = options;
-    const msg = {
-      from: mailFrom, // Replace with the recipient's email address
-      ...options
-    };
-    sgMail
-    .send(msg)
-    .then((response) => {
-        console.log(response[0].statusCode)
-        console.log(response)
-    })
-    .catch((error) => {
+export const sendEmailSG = async (options: EmailOptions): Promise<boolean> =>{
+    try{
+        const { to, subject, text, html } = options;
+        const msg = {
+        from: mailFrom, // Replace with the recipient's email address
+        ...options
+        };
+        await sgMail.send(msg);
+        // Email sent successfully
+        return true;
+    } catch (error) {
+        // Log the error
         console.error(error);
-    })
+        // Email sending failed
+        return false;
+    }
 }
