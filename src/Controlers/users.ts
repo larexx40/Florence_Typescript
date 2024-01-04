@@ -472,7 +472,108 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 //resetPasswordToken
-//verifyResetPasswordToken
+export const resetPasswordToken = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  if (!req.body || Object.keys(req.body).length === 0) {
+    res
+      .status(400)
+      .json({ status: false, message: "Request body is required" });
+    return;
+  }
+  const {email, otp, newPassword} = req.body;
+  if (!otp || !newPassword) {
+    res.status(400).json({ status: false, message: "Pass all required field" });
+    return;
+  }
+
+  try {
+    const user = await getUser({email});
+    if (!user) {
+      res.status(400).json({ status: false, message: "User with email not exist" });
+      return;
+    }
+
+    //verify the OTP
+    if (user.verification_token !== otp) {
+      res.status(400).json({ status: false, message: "Invalid OTP" });
+      return;
+    }
+    //verify the OTP expiry
+    if (user?.verification_token_time && user.verification_token_time < new Date()) {
+        res.status(400).json({ status: false, message: "OTP expired" });
+    }
+
+    //hash and update the password
+    const hashedPassword = await hashPassword(newPassword);
+    user.password = hashedPassword;
+    user.verification_token = null;
+    user.verification_token_time = "";
+    const updateUserPassword = await updateUser({email}, user);
+    if (updateUserPassword) {
+      res.status(200).json({ status: true, message: "Password changed successfully" });
+    }
+
+  } catch (error) {
+    
+  }
+
+}
+//forgetPassword
+export const forgetPassword = async (req: Request, res: Response): Promise<void> => {
+
+  if (!req.body || Object.keys(req.body).length === 0) {
+    res
+      .status(400)
+      .json({ status: false, message: "Request body is required" });
+    return;
+  }
+
+  const email = req.body.email;
+  if(!email) {
+    res.status(400).json({ status: false, message: "Email is required" });
+    return;
+  }
+
+  const verification_token: number = generateVerificationOTP();
+  //current time + 5 mins
+  const verification_token_time: Date = new Date(Date.now() + OTPExpiryTime);
+
+  try {
+    const user = await getUser({email});
+    if(!user) {
+      res.status(400).json({ status: false, message: "User with email not exist" });
+      return;
+    }
+    const updateUserToken = await updateUser(
+      { email },
+      { verification_token, verification_token_time }
+    );
+    if (!updateUserToken) {
+      res.status(400).json({ status: false, message: "Internal server error" });
+      return;
+    }
+
+    let emailHtml = `<h1>Your OTP is ${verification_token}</h1>`;
+    const text = `Your OTP is ${verification_token}`;
+    const subject = "OTP Verification";
+    const emailOptions: EmailOptions = {
+      to: email,
+      subject,
+      text,
+      html: emailHtml,
+    };
+    const sendOTPEmail = await sendEmailSG(emailOptions);
+
+    res.status(200).json({ status: true, message: "OTP sent to your email" });
+    
+  } catch (error) {
+    
+  }
+
+  
+}
 //resetPassword
 //profileDetails
 //updatePhoneno
