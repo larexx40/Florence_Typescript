@@ -595,8 +595,20 @@ export const userProfile = async (req: Request, res: Response): Promise<void> =>
     //unset password from user
     user.password = '';
     res.status(200).json({ status: true, message: "User profile fetched", data: user });
-
-
 }
 //updatePhoneno
+export const updatePhoneno = async(req: Request, res: Response): Promise<void> =>{
+    if (!req.body || Object.keys(req.body).length === 0) {
+        res
+            .status(400)
+            .json({ status: false, message: "Request body is required" });
+        return;
+    }
+
+    const phoneno = req.body.phoneno;
+    if(!phoneno) {
+        res.status(400).json({ status: false, message: "Phoneno is required" });
+        return;
+    }
+}
 //updateProfile
