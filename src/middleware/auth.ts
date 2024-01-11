@@ -1,8 +1,15 @@
 import dotenv from 'dotenv';
 import jwt,  { SignOptions} from 'jsonwebtoken';
+import { NextFunction, Request, Response } from "express";
 const { TokenExpiredError } = jwt;
 import { AuthTokenPayload } from '../Types/types';
 dotenv.config();
+
+declare module "express" {
+    interface Request {
+      user?: AuthTokenPayload;
+    }
+}
 
 export const checkToken = (req: any, res: any, next: any) => {
     if (!req.headers.authorization) {
@@ -37,6 +44,40 @@ export const checkToken = (req: any, res: any, next: any) => {
         return res.status(500).json({ status: false, message: 'Invalid token' });
         
     }
+}
+
+export const isAdmin = (req: Request, res: Response, next: NextFunction)=>{
+    if (!req.user) {
+        res
+          .status(400)
+          .json({ status: false, message: "User not authenticated" });
+        return;
+    }
+    const role = req.user.role
+    if (role !== 'Super Admin' && role !== 'Admin'){
+        res
+          .status(400)
+          .json({ status: false, message: "User not authourise to access this route" });
+        return;
+    }
+    next();
+}
+
+export const isUser = (req: Request, res: Response, next: NextFunction)=>{
+    if (!req.user) {
+        res
+          .status(400)
+          .json({ status: false, message: "User not authenticated" });
+        return;
+    }
+    const role = req.user.role
+    if (role !== 'Sales Rep' && role !== 'Reseller' && role !== 'User'){ 
+        res
+          .status(400)
+          .json({ status: false, message: "User not authourise to access this route" });
+        return;
+    }
+    next();
 }
 
 // export const verifyUser = (req: any, res: any, next: any) => {

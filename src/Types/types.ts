@@ -4,11 +4,11 @@ export interface EmailOptions {
     text: string;
     html?: string;
 }
-
+type userRole = 'Super Admin'| 'Admin' | 'User' | 'Sales Rep' | 'Reseller';
 export interface AuthTokenPayload {
     exp: any;
     userid: string;
     email: string;
-    role: string; 
+    role: userRole; 
 }
 

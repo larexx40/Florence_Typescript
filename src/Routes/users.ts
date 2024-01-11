@@ -1,15 +1,17 @@
 import { Router } from "express";
-import { addUser, deleteUser, getUser, getUsers, signup, updateUser, verifyEmailToken } from "../Controlers/users";
+import { addUser, deleteUser, getUserdetails, getUsers, signup, updatePhoneno, updateUserInfo, userProfile, verifyEmailToken } from "../Controlers/users";
 import { checkToken } from "../middleware/auth";
 const userRouter = Router();
 
 //admin authentication
 userRouter.get("/", getUsers);
-userRouter.get("/:id", getUser);
+userRouter.get("/:id", getUserdetails);
 userRouter.post("/", addUser);
 userRouter.post("/signup", signup);
 userRouter.post("/verify-email", checkToken, verifyEmailToken);
 userRouter.delete('/', deleteUser);
-userRouter.patch('/:id', updateUser);
+userRouter.patch('/:id', updateUserInfo);
+userRouter.get('/profile', checkToken, userProfile)
+userRouter.get('/', checkToken, updatePhoneno)
 
 export default userRouter;
