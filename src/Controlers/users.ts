@@ -15,7 +15,7 @@ import {
 } from "../Utils/utils";
 import dotenv from "dotenv";
 import { signJwt } from "../Utils/jwt";
-import { EmailOptions, AuthTokenPayload } from "../Types/types";
+import { EmailOption, AuthTokenPayload } from "../Types/types";
 import { sendEmailSG } from "../Utils/sendgrid";
 import { getUser, updateUser } from "../Repositories/users";
 
@@ -256,14 +256,14 @@ export const signup = async (
     let emailHtml = `<h1>Your OTP is ${savedUser.verification_token}</h1>`;
     const text = `Your OTP is ${savedUser.verification_token}`;
     const subject = "OTP Verification";
-    const emailOptions: EmailOptions = {
+    const EmailOption: EmailOption = {
       to: savedUser.email,
       subject,
       text,
       html: emailHtml,
     };
 
-    const sendOTPEmail = await sendEmailSG(emailOptions);
+    const sendOTPEmail = await sendEmailSG(EmailOption);
     res
       .status(201)
       .json({
@@ -368,14 +368,14 @@ export const resendEmailToken = async (
     let emailHtml = `<h1>Your OTP is ${verification_token}</h1>`;
     const text = `Your OTP is ${verification_token}`;
     const subject = "OTP Verification";
-    const emailOptions: EmailOptions = {
+    const EmailOption: EmailOption = {
       to: email,
       subject,
       text,
       html: emailHtml,
     };
 
-    const sendOTPEmail = await sendEmailSG(emailOptions);
+    const sendOTPEmail = await sendEmailSG(EmailOption);
     res.status(201).json({ status: true, message: "Verification OTP sent" });
   } catch (error) {
     console.log(error);
@@ -438,14 +438,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         let emailHtml = `<h1>Your OTP is ${verification_token}</h1>`;
         const text = `Your OTP is ${verification_token}`;
         const subject = "OTP Verification";
-        const emailOptions: EmailOptions = {
+        const EmailOption: EmailOption = {
           to: email,
           subject,
           text,
           html: emailHtml,
         };
 
-        const sendOTPEmail = await sendEmailSG(emailOptions);
+        const sendOTPEmail = await sendEmailSG(EmailOption);
       }
     }
 
@@ -558,13 +558,13 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
     let emailHtml = `<h1>Your OTP is ${verification_token}</h1>`;
     const text = `Your OTP is ${verification_token}`;
     const subject = "OTP Verification";
-    const emailOptions: EmailOptions = {
+    const EmailOption: EmailOption = {
       to: email,
       subject,
       text,
       html: emailHtml,
     };
-    const sendOTPEmail = await sendEmailSG(emailOptions);
+    const sendOTPEmail = await sendEmailSG(EmailOption);
     if(!sendOTPEmail) {
       res.status(400).json({ status: false, message: "Unable to send OTP via email" });
       return;
@@ -598,5 +598,53 @@ export const userProfile = async (req: Request, res: Response): Promise<void> =>
     res.status(200).json({ status: true, message: "User profile fetched", data: user });
 }
 //updatePhoneno
+export const updatePhoneno = async(req: Request, res: Response): Promise<void> =>{
+    if(!req.user){
+      res.status(400).json({ status: false, message: "User not authenticated" });
+      return;
+    }
+    const email = req.user.email;
+    if (!req.body || Object.keys(req.body).length === 0) {
+        res
+            .status(400)
+            .json({ status: false, message: "Request body is required" });
+        return;
+    }
+    const phoneno = req.body.phoneno;
+    if(!phoneno) {
+        res.status(400).json({ status: false, message: "Phoneno is required" });
+        return;
+    }
 
+    //generate verification token and expiry time and patch;
+    const verification_token: number = generateVerificationOTP();
+    //current time + 5 mins
+    const verification_token_time: Date = new Date(Date.now() + OTPExpiryTime);
+
+    const updateValue = {
+      phoneno: phoneno, 
+      verification_token:verification_token,
+      verification_token_time: verification_token_time
+    };
+
+    try{
+      const update = await updateUser({email}, updateValue)
+      if (!update){
+        res.status(400).json({ status: false, message: "Internal server error" });
+        return;
+      }
+      //send sms code
+
+    }catch(error){
+      console.log(error);
+      res.status(500).json({ status: false, message: "Internal server error" });
+    }
+
+
+
+}
+//verifyPhone
+export const verfyPhoneno = async(req: Request, res: Response): Promise<void> =>{
+
+}
 //updateProfile

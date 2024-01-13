@@ -1,6 +1,6 @@
 // import nodemailer, { Transporter } from 'nodemailer';
 // import * as sgTransport from 'nodemailer-sendgrid-transport';
-// import { EmailOptions } from '../Types/types';
+// import { EmailOption } from '../Types/types';
 // import smtpTransport = require('nodemailer-smtp-transport');
 // import dotenv from 'dotenv';
 // dotenv.config()
@@ -17,7 +17,7 @@
 //   })
 // );
 
-// export const sendMailSG = async (options: EmailOptions): Promise<void> => {
+// export const sendMailSG = async (options: EmailOption): Promise<void> => {
 //   const mailOptions: nodemailer.SendMailOptions = {
 //     from: 'your-email@example.com', // Sender's email address
 //     to: options.to,
@@ -46,7 +46,7 @@
 //     })
 // );
 
-// export const sendEmailSMTP = async (options: EmailOptions): Promise<void> => {
+// export const sendEmailSMTP = async (options: EmailOption): Promise<void> => {
 //     const { to, subject, text, html } = options;
 //     const mailOptions: nodemailer.SendMailOptions = {
 //         from: 'your-email@example.com', // Sender's email address

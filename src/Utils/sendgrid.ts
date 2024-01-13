@@ -1,5 +1,5 @@
 import  sgMail from '@sendgrid/mail';
-import { EmailOptions } from '../Types/types';
+import { EmailOption } from '../Types/types';
 import dotenv from 'dotenv';
 dotenv.config()
 
@@ -13,7 +13,7 @@ let mailFrom: string = EMAIL_FROM? EMAIL_FROM : 'no-reply@everything.florence..c
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Create a function to send an email
-export const sendEmailSG = async (options: EmailOptions): Promise<boolean> =>{
+export const sendEmailSG = async (options: EmailOption): Promise<boolean> =>{
     try{
         const { to, subject, text, html } = options;
         const msg = {
