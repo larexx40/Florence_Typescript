@@ -18,6 +18,7 @@ import { signJwt } from "../Utils/jwt";
 import { EmailOption, AuthTokenPayload } from "../Types/types";
 import { sendEmailSG } from "../Utils/sendgrid";
 import { getUser, updateUser } from "../Repositories/users";
+import { sendMailNM } from "../Utils/nodemailer";
 
 dotenv.config();
 
@@ -224,7 +225,7 @@ export const signup = async (
     return;
   }
 
-  const { JWT_EXPIRY } = process.env;
+  const { JWT_EXPIRY, ACTIVE_MAIL_SYSTEM  } = process.env;
   const verification_token: number = generateVerificationOTP();
   //current time + 5 mins
   const verification_token_time: Date = new Date(Date.now() + OTPExpiryTime);
@@ -263,7 +264,8 @@ export const signup = async (
       html: emailHtml,
     };
 
-    const sendOTPEmail = await sendEmailSG(EmailOption);
+    
+    const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
     res
       .status(201)
       .json({
@@ -375,7 +377,9 @@ export const resendEmailToken = async (
       html: emailHtml,
     };
 
-    const sendOTPEmail = await sendEmailSG(EmailOption);
+    
+    const { ACTIVE_MAIL_SYSTEM } = process.env;
+    const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
     res.status(201).json({ status: true, message: "Verification OTP sent" });
   } catch (error) {
     console.log(error);
@@ -419,7 +423,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ status: false, message: "Invalid password" });
       return;
     }
-
+    
+    
+    const { JWT_EXPIRY, ACTIVE_MAIL_SYSTEM } = process.env;
     // send email OTP if email not verified
     if (!user?.email_verified) {
       //send verification OTP to user email
@@ -445,12 +451,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           html: emailHtml,
         };
 
-        const sendOTPEmail = await sendEmailSG(EmailOption);
+        const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
       }
     }
 
     //generate token
-    const { JWT_EXPIRY } = process.env;
     const payload: AuthTokenPayload = {
       exp: JWT_EXPIRY,
       userid: user._id,
@@ -536,6 +541,8 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
     return;
   }
 
+  
+  const { ACTIVE_MAIL_SYSTEM } = process.env;
   const verification_token: number = generateVerificationOTP();
   //current time + 5 mins
   const verification_token_time: Date = new Date(Date.now() + OTPExpiryTime);
@@ -564,7 +571,8 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
       text,
       html: emailHtml,
     };
-    const sendOTPEmail = await sendEmailSG(EmailOption);
+    
+    const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
     if(!sendOTPEmail) {
       res.status(400).json({ status: false, message: "Unable to send OTP via email" });
       return;
