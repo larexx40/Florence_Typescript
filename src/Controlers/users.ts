@@ -19,6 +19,7 @@ import { EmailOption, AuthTokenPayload } from "../Types/types";
 import { sendEmailSG } from "../Utils/sendgrid";
 import { getUser, updateUser } from "../Repositories/users";
 import { sendMailNM } from "../Utils/nodemailer";
+import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -216,6 +217,33 @@ export const signup = async (
     return;
   }
 
+  //user validation to avoid breaking server
+  const validateRequiredFields = [
+    body("email").notEmpty().withMessage("Email is required"),
+    body("phoneno").notEmpty().withMessage("Phoneno is required"),
+    body("password").notEmpty().withMessage("Password is required"),
+  ];
+  // execute validation
+  validateRequiredFields.forEach((validation) =>
+    validation(req, res, () => {})
+  );
+
+  addUserValidation.forEach((validation) => validation(req, res, () => {}));
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Construct a meaningful error response
+    let newError = errors.array();
+    //return only the msg and path from the error
+    console.log(newError);
+    const errorResponse = newError.map((error) => ({
+      // field: error.path,
+      message: error.msg,
+    }));
+
+    res.status(422).json({ errors: errorResponse });
+    return;
+  }
+
   const { name, email, phoneno, username, dob, address, businessName, role } =
     req.body;
   if (!name || !email || !phoneno || !req.body.password || role) {
@@ -275,6 +303,11 @@ export const signup = async (
         authToken,
       });
   } catch (error) {
+    if (error instanceof mongoose.Error.ValidationError) {
+      // Mongoose validation error
+      const validationErrors = Object.values(error.errors).map((err) => err.message);
+      res.status(400).json({ status: false, error: 'Validation failed', messages: validationErrors });
+    }
     res.status(500).json({ status: false, message: "Internal server error" });
     console.log(error);
   }

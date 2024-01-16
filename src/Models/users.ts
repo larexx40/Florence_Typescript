@@ -39,7 +39,7 @@ const userSchema = new Schema <IUserDocument> ({
     required: [true, 'Phone number is required'],
     unique: true,
     trim: true,
-    match: [/^\d{15}$/, 'Please enter a valid phone number'],
+    match: [/^\d{11,15}$/, 'Please enter a valid phone number'],
   },
   dob: {
     type: Date,

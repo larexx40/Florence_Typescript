@@ -6,7 +6,6 @@ dotenv.config()
 
 
 const { SMTP_HOST, SMTP_PORT, SMTP_TLS, SMTP_USERNAME, SMTP_PASSWORD } = process.env;
-console.log(SMTP_HOST, SMTP_PORT, SMTP_TLS, SMTP_USERNAME, SMTP_PASSWORD);
 
 if(!SMTP_HOST || !SMTP_PORT || !SMTP_USERNAME || !SMTP_PASSWORD){
     throw new Error('Mail server configuration is not set');
