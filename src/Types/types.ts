@@ -5,6 +5,11 @@ export interface EmailOption {
     text: string;
     html?: string;
 }
+
+export interface EmailWithTemplate extends EmailOption {
+    template: string;
+    context?: { [key: string]: any };
+}
 export interface SMSOption{
 
 }

@@ -35,8 +35,8 @@ transport.verify(function(error, success) {
 });
 
 //point to where the email is
-const viewPath =  path.resolve(__dirname, './Templates/Views/');
-const includePath = path.resolve(__dirname, './Templates/Includes');
+const viewPath =  path.resolve(__dirname, '../Templates/Views/');
+const includePath = path.resolve(__dirname, '../Templates/Includes');
 const handlebarsOptions = {
   viewEngine: {
     extName: '.handlebars',

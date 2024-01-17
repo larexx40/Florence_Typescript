@@ -15,7 +15,7 @@ import {
 } from "../Utils/utils";
 import dotenv from "dotenv";
 import { signJwt } from "../Utils/jwt";
-import { EmailOption, AuthTokenPayload } from "../Types/types";
+import { EmailOption, AuthTokenPayload, EmailWithTemplate } from "../Types/types";
 import { sendEmailSG } from "../Utils/sendgrid";
 import { getUser, updateUser } from "../Repositories/users";
 import { sendMailNM } from "../Utils/nodemailer";
@@ -275,7 +275,7 @@ export const signup = async (
       verification_token_time,
     };
     const newUser = new User(user);
-    let savedUser: UserProfile = await newUser.save();
+    let savedUser = await newUser.save();
     const payload: AuthTokenPayload = {
       email: savedUser.email,
       userid: savedUser._id,
@@ -288,21 +288,42 @@ export const signup = async (
 
     //email template using handlebar
     
-    const EmailOption: EmailOption = {
+    const EmailOption: EmailWithTemplate = {
       to: savedUser.email,
       subject,
       text,
-      html: emailHtml,
+      // html: emailHtml,
+      template: 'signup',
+      context: {
+        name: savedUser.username || savedUser.name
+      }
     };
 
     
     const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
+    const userResponse: UserProfile ={
+      _id: savedUser._id,
+      name: savedUser.name,
+      username: savedUser.username,
+      email: savedUser.email,
+      phoneno: savedUser.phoneno,
+      dob: savedUser.dob,
+      address: savedUser.address,
+      balance: savedUser.balance,
+      role: savedUser.role,
+      toBalance: savedUser.toBalance,
+      businessName: savedUser.businessName,
+      status: savedUser.status,
+      email_verified: savedUser.email_verified,
+      createdAt: savedUser.createdAt,
+      updatedAt: savedUser.updatedAt
+    }
     res
       .status(201)
       .json({
         status: true,
         message: "User created successfully",
-        data: savedUser,
+        data: userResponse,
         authToken,
       });
   } catch (error) {
