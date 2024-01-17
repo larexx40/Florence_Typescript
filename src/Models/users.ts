@@ -3,7 +3,11 @@ import { IUser } from './types';
 
 
 // Extend the Document interface to include methods or fields specific to your model
-interface IUserDocument extends IUser, Document {}
+interface IUserDocument extends IUser, Document {
+  _id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 // Define the user schema
 const userSchema = new Schema <IUserDocument> ({
   name: {

@@ -1,6 +1,9 @@
 import nodemailer from 'nodemailer';
+import exphbs from 'express-handlebars';
+import nodemailerExpressHandlebars from 'nodemailer-express-handlebars';
 import { EmailOption } from '../Types/types';
 import dotenv from 'dotenv';
+import * as path from 'path';
 dotenv.config()
 
 
@@ -31,12 +34,28 @@ transport.verify(function(error, success) {
     }
 });
 
+//point to where the email is
+const viewPath =  path.resolve(__dirname, './Templates/Views/');
+const includePath = path.resolve(__dirname, './Templates/Includes');
+const handlebarsOptions = {
+  viewEngine: {
+    extName: '.handlebars',
+    partialsDir: includePath,
+    layoutsDir: viewPath,
+    defaultLayout: false,
+  },
+  viewPath: viewPath,
+  extName: '.handlebars',
+}as nodemailerExpressHandlebars.NodemailerExpressHandlebarsOptions; // Type casting here
+transport.use('compile', nodemailerExpressHandlebars(handlebarsOptions));
+
+
  // Function to send an email
 export const sendMailNM = async (options: EmailOption): Promise<boolean> => {
   try {
     // Email options
     const msg = {
-        from: (options.from)? options.from : "no-reply@everything.florence" , // Replace with the recipient's email address
+        from: (options.from)? options.from : SMTP_USERNAME , // Replace with the recipient's email address
         ...options
     };
     // Send mail
@@ -46,7 +65,7 @@ export const sendMailNM = async (options: EmailOption): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Error sending email: ', error);
-    throw new Error('Error sending email');
+    // throw new Error('Error sending email');
     // Email sending failed
     return false;
   }

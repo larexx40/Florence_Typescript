@@ -9,7 +9,7 @@ if(!SENDGRID_API_KEY) {
     throw new Error('SENDGRID_API_KEY is not set');
 }
 //make EMAIL_FROM a type of string
-let mailFrom: string = EMAIL_FROM? EMAIL_FROM : 'no-reply@everything.florence..co';
+let mailFrom: string = EMAIL_FROM? EMAIL_FROM : 'no-reply@everything.florence.co';
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Create a function to send an email

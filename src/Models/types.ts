@@ -24,3 +24,21 @@ export interface IUser {
     // Additional fields can be added as needed
     // ...
 }
+
+export interface UserProfile {
+    _id: string,
+    name: string;
+    username: string;
+    email: string;
+    phoneno: string;
+    dob?: Date;
+    address: string;
+    balance?: number;
+    role: userRole;
+    toBalance?: number;
+    businessName: string;
+    status?: typeof statuses[number];
+    email_verified?: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}

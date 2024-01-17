@@ -1,7 +1,7 @@
 import { validationResult, body, check } from "express-validator";
 import { NextFunction, Request, Response } from "express";
 import User, { IUserDocument } from "../Models/users";
-import { IUser } from "../Models/types";
+import { IUser, UserProfile } from "../Models/types";
 import {
   addUserValidation,
   updateUserValidation,
@@ -20,6 +20,7 @@ import { sendEmailSG } from "../Utils/sendgrid";
 import { getUser, updateUser } from "../Repositories/users";
 import { sendMailNM } from "../Utils/nodemailer";
 import mongoose from "mongoose";
+import * as path from 'path';
 
 dotenv.config();
 
@@ -274,17 +275,19 @@ export const signup = async (
       verification_token_time,
     };
     const newUser = new User(user);
-    let savedUser: IUser = await newUser.save();
+    let savedUser: UserProfile = await newUser.save();
     const payload: AuthTokenPayload = {
       email: savedUser.email,
       userid: savedUser._id,
       role: savedUser.role,
-      exp: JWT_EXPIRY,
     };
-    const authToken = signJwt(payload, "1h");
-    let emailHtml = `<h1>Your OTP is ${savedUser.verification_token}</h1>`;
-    const text = `Your OTP is ${savedUser.verification_token}`;
+    const authToken = signJwt(payload);
+    let emailHtml = `<h1>Your OTP is ${verification_token}</h1>`;
+    const text = `Your OTP is ${verification_token}`;
     const subject = "OTP Verification";
+
+    //email template using handlebar
+    
     const EmailOption: EmailOption = {
       to: savedUser.email,
       subject,
@@ -490,12 +493,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     //generate token
     const payload: AuthTokenPayload = {
-      exp: JWT_EXPIRY,
       userid: user._id,
       email: user.email,
       role: user.role,
     };
-    const authToken = signJwt(payload, "1h");
+    const authToken = signJwt(payload);
 
 
     res.status(200).json({
@@ -634,9 +636,9 @@ export const userProfile = async (req: Request, res: Response): Promise<void> =>
         res.status(400).json({ status: false, message: "User not found" });
         return;
     }
+    let profile: UserProfile = user
     //unset password from user
-    user.password = '';
-    res.status(200).json({ status: true, message: "User profile fetched", data: user });
+    res.status(200).json({ status: true, message: "User profile fetched", data: profile });
 }
 //updatePhoneno
 export const updatePhoneno = async(req: Request, res: Response): Promise<void> =>{
