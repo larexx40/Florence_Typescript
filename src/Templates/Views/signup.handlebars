@@ -1,14 +1,31 @@
-<!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
   <title>Welcome to EverythingFlorence</title>
+  <style>
+    body: {
+      color: black;
+    }
+  </style>
 </head>
+
 <body>
-  <h2>Hello {{name}}! </h2>
-  <p>We're glad to have you our in online store. </p>
-  <p>Feel free to check our catalogue to make decision or reachout to us for more details about our product </p>
-  <p>If you have any question, feel free to contact us <a href="mailto:florence.oyeniyi@everythingflorence.com.ng">here.</a> </p>
+  <div style="border: 1px solid black;  width: 100%">
+      <div style="padding:30px;">
+        {{>header}}
+        <h2>Hello {{name}}! </h2>
+        <p>We're glad to have you our in online store. </p>
+        <p>Feel free to check our catalogue to make decision or reachout to us for
+          more details about our product
+        </p>
+        <p>If you have any question, feel free to contact us
+          <a href="mailto:florence.oyeniyi@everythingflorence.com.ng">here.</a>
+        </p>
+      </div>
+        {{>footer}}
+  </div>
 </body>
+
 </html>

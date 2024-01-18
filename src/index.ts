@@ -13,5 +13,5 @@ app.use("/api/v1/users", userRouter);
 const PORT = environment.getPort() || 5000;
 
 db.then(() => {
-    app.listen(PORT, () => console.log(`Server listening on port ${PORT}`))
+    app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 });

@@ -30,8 +30,9 @@ const getUserByid = async (id: string): Promise<IUserDocument | null> => {
   }
 };
 
-export const getUser = async (where: any): Promise<IUserDocument | null> =>{
-  return await User.findOne({where})
+export const getUser = async (whereClause: any): Promise<IUserDocument | null> =>{
+  return await User.findOne(whereClause)
+  
 }
 
  const updateUserById = async (id: string, updatedUser: any): Promise<IUserDocument | null> => {
@@ -52,8 +53,8 @@ export const updateUser = async (whereFields: any, newDetails: any): Promise<IUs
   }
 }
 
-const checkIfExist = async (whereField: any): Promise<boolean | null> =>{
-  return User.findOne({whereField});
+export const checkIfExist = async (whereClause: any): Promise<boolean | null> =>{
+  return User.findOne(whereClause);
 }
 
 //delete user from database

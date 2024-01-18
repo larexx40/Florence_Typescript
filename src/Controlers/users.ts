@@ -17,7 +17,7 @@ import dotenv from "dotenv";
 import { signJwt } from "../Utils/jwt";
 import { EmailOption, AuthTokenPayload, EmailWithTemplate } from "../Types/types";
 import { sendEmailSG } from "../Utils/sendgrid";
-import { getUser, updateUser } from "../Repositories/users";
+import { checkIfExist, getUser, updateUser } from "../Repositories/users";
 import { sendMailNM } from "../Utils/nodemailer";
 import mongoose from "mongoose";
 import * as path from 'path';
@@ -254,6 +254,8 @@ export const signup = async (
     return;
   }
 
+  //validate password, email and username
+
   const { JWT_EXPIRY, ACTIVE_MAIL_SYSTEM  } = process.env;
   const verification_token: number = generateVerificationOTP();
   //current time + 5 mins
@@ -261,6 +263,15 @@ export const signup = async (
   const password = await hashPassword(req.body.password);
 
   try {
+    // confirm if the mail exist
+    const isExist = await checkIfExist({email: email});
+    if (isExist) {
+      res
+      .status(400)
+      .json({ status: false, message: "Account with email already exist" });
+      return;
+    }
+
     const user: IUser = {
       name,
       email,
@@ -288,7 +299,7 @@ export const signup = async (
 
     //email template using handlebar
     
-    const EmailOption: EmailWithTemplate = {
+    const signUpEmail: EmailWithTemplate = {
       to: savedUser.email,
       subject,
       text,
@@ -299,8 +310,21 @@ export const signup = async (
       }
     };
 
+    const signupOTPEmail: EmailWithTemplate = {
+      to: savedUser.email,
+      subject: "Verification OTP",
+      text,
+      template: 'signup-otp',
+      context: {
+        name: savedUser.username || savedUser.name
+      }
+    }
+
     
-    const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
+    const sendSignupEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(signUpEmail): await sendMailNM(signUpEmail);
+    if(sendSignupEmail){
+      const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(signupOTPEmail): await sendMailNM(signupOTPEmail);
+    }
     const userResponse: UserProfile ={
       _id: savedUser._id,
       name: savedUser.name,
@@ -347,13 +371,14 @@ export const verifyEmailToken = async (
       .json({ status: false, message: "Request body is required" });
     return;
   }
-  const { email, verification_token } = req.body;
-  if (!email || !verification_token) {
+  const { verification_token } = req.body;
+  if (!verification_token) {
     res
       .status(400)
-      .json({ status: false, message: "Pass all required fields" });
+      .json({ status: false, message: "Pass verification OTP sent to your mail" });
     return;
   }
+  const email = req.user?.email;
   const user: IUserDocument | null = await User.findOne({ email });
   if (!user) {
     res.status(404).json({ error: "User not found" });
@@ -461,7 +486,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
   try {
     //get user
-    const user = await getUser({ email });
+    const whereClause = {
+      email: email
+    }
+
+    const user = await getUser(whereClause);
     if (!user) {
       res
         .status(400)
