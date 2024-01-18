@@ -6,6 +6,7 @@ import {
   addUserValidation,
   updateUserValidation,
   deleteUserValidation,
+  signupValidations,
 } from "../Validations/userValidation";
 import {
   OTPExpiryTime,
@@ -94,7 +95,7 @@ export const addUser = async (req: Request, res: Response): Promise<void> => {
     res.status(201).json(savedUser);
   } catch (error) {
     // console.error('Error adding user:', error);
-    console.log(error);
+    console.error(error);
     res.status(500).json({ status: false, error: "Internal Server Error" });
   }
 };
@@ -201,53 +202,60 @@ export const deleteUser = async (
   }
 };
 //signup
+type ValidationResultError = {
+  [string: string]: [string];
+};
 export const signup = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (
-    req.body == "" ||
-    req.body == null ||
-    !req.body ||
-    Object.keys(req.body).length === 0
-  ) {
-    res
-      .status(400)
-      .json({ status: false, message: "Request body is required" });
+   // Check if the request body is empty
+   if (!req.body || Object.keys(req.body).length === 0) {
+    res.status(400).json({ status: false, message: "Request body is required" });
+    return;
+  }
+  // Execute validation
+  await Promise.all(signupValidations.map(validation => validation.run(req)));
+  // Execute validation
+  signupValidations.forEach((validation) => validation(req, res, () => {}));
+  // Check for validation errors
+  const validationErrors = validationResult(req);
+  if (!validationErrors.isEmpty()) {
+    const newError: ValidationResultError = {};
+    const errors = validationErrors.array().forEach((error)=>{
+      if(error.type === 'field'){
+        newError[error.path]= error.msg
+      }
+    })
+    res.status(422).json({ 
+      status: false,
+      message: "Validation error",
+      errors: newError 
+    });
     return;
   }
 
-  //user validation to avoid breaking server
-  const validateRequiredFields = [
-    body("email").notEmpty().withMessage("Email is required"),
-    body("phoneno").notEmpty().withMessage("Phoneno is required"),
-    body("password").notEmpty().withMessage("Password is required"),
-  ];
-  // execute validation
-  validateRequiredFields.forEach((validation) =>
-    validation(req, res, () => {})
-  );
+  // Check for validation errors
+  // const validationErrors = validationResult(req);
+  // if (!validationErrors.isEmpty()) {
+  //   console.log("validation error", validationErrors);
+  //   const newError: ValidationResultError = {};
+  //   const errors = validationErrors.array().forEach((error)=>{
+  //     if(error.type === 'field'){
+  //       newError[error.path]= error.msg
+  //     }
+  //   })
+  //   res.status(422).json({ 
+  //     status: false,
+  //     message: "Validation error",
+  //     errors: newError 
+  //   });
+  //   return;
+  // }
 
-  addUserValidation.forEach((validation) => validation(req, res, () => {}));
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    // Construct a meaningful error response
-    let newError = errors.array();
-    //return only the msg and path from the error
-    console.log(newError);
-    const errorResponse = newError.map((error) => ({
-      // field: error.path,
-      message: error.msg,
-    }));
-
-    res.status(422).json({ errors: errorResponse });
-    return;
-  }
-
-  const { name, email, phoneno, username, dob, address, businessName, role } =
-    req.body;
-  if (!name || !email || !phoneno || !req.body.password || role) {
+  const { name, email, phoneno, username, dob, address, businessName, role, password } = req.body;
+  if (!name || !email || !phoneno || !password || role) {
     res
       .status(400)
       .json({ status: false, message: "Pass all required fields" });
@@ -260,15 +268,27 @@ export const signup = async (
   const verification_token: number = generateVerificationOTP();
   //current time + 5 mins
   const verification_token_time: Date = new Date(Date.now() + OTPExpiryTime);
-  const password = await hashPassword(req.body.password);
+  const newPassword: string = await hashPassword(req.body.password);
 
   try {
-    // confirm if the mail exist
-    const isExist = await checkIfExist({email: email});
-    if (isExist) {
+    // confirm if the  username and email exists
+    const [isEmailExist, isUsernameExist] = await Promise.all([
+      checkIfExist({ email }),
+      username ? checkIfExist({ username }) : null,
+    ]);
+
+    if (isEmailExist) {
       res
       .status(400)
       .json({ status: false, message: "Account with email already exist" });
+      return;
+    }
+
+    if(isUsernameExist){
+      res.status(400).json({
+        status: false,
+        message: "Username already exist"
+      })
       return;
     }
 
@@ -276,7 +296,7 @@ export const signup = async (
       name,
       email,
       phoneno,
-      password,
+      password: newPassword,
       username,
       dob,
       address,
@@ -293,16 +313,12 @@ export const signup = async (
       role: savedUser.role,
     };
     const authToken = signJwt(payload);
-    let emailHtml = `<h1>Your OTP is ${verification_token}</h1>`;
-    const text = `Your OTP is ${verification_token}`;
-    const subject = "OTP Verification";
 
     //email template using handlebar
-    
     const signUpEmail: EmailWithTemplate = {
       to: savedUser.email,
-      subject,
-      text,
+      subject: `Welcome ${name}`,
+      text: "Welcome to Everything Florence",
       // html: emailHtml,
       template: 'signup',
       context: {
@@ -313,7 +329,7 @@ export const signup = async (
     const signupOTPEmail: EmailWithTemplate = {
       to: savedUser.email,
       subject: "Verification OTP",
-      text,
+      text: `Your OTP is ${verification_token}`,
       template: 'signup-otp',
       context: {
         name: savedUser.username || savedUser.name
@@ -357,7 +373,7 @@ export const signup = async (
       res.status(400).json({ status: false, error: 'Validation failed', messages: validationErrors });
     }
     res.status(500).json({ status: false, message: "Internal server error" });
-    console.log(error);
+    console.error(error);
   }
 };
 //verifyEmailToken
@@ -368,25 +384,40 @@ export const verifyEmailToken = async (
   if (!req.body || Object.keys(req.body).length === 0) {
     res
       .status(400)
-      .json({ status: false, message: "Request body is required" });
+      .json({ 
+        status: false, 
+        message: "Request body is required" 
+      });
     return;
   }
   const { verification_token } = req.body;
   if (!verification_token) {
     res
       .status(400)
-      .json({ status: false, message: "Pass verification OTP sent to your mail" });
+      .json({ 
+        status: false, 
+        message: "Pass the verification OTP sent to your mail" 
+      });
     return;
   }
   const email = req.user?.email;
-  const user: IUserDocument | null = await User.findOne({ email });
+  const emailClause = {
+    email: email
+  }
+
+  const user: IUserDocument|null  = await getUser(emailClause);
   if (!user) {
-    res.status(404).json({ error: "User not found" });
+    res
+      .status(400)
+      .json({ status: false, message: "Invalid user" });
     return;
   }
   //compare verivication token with db
   if (user.verification_token !== verification_token) {
-    res.status(401).json({ error: "Invalid verification token" });
+    res.status(401).json({ 
+      status: false, 
+      error: "Invalid verification token" 
+    });
     return;
   }
   //check if token is expired
@@ -395,7 +426,10 @@ export const verifyEmailToken = async (
     user?.verification_token_time &&
     user.verification_token_time < new Date()
   ) {
-    res.status(401).json({ error: "Verification token expired" });
+    res.status(401).json({ 
+      status: false,
+      error: "Verification token expired" 
+    });
     return;
   }
   //update user email_verified to true
@@ -406,19 +440,16 @@ export const verifyEmailToken = async (
 
   res
     .status(200)
-    .json({ status: true, message: "Email verified successfully" });
+    .json({ 
+      status: true, 
+      message: "Email verified successfully" 
+    });
 };
 //resend verifyemailToken
 export const resendEmailToken = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  if (!req.body || Object.keys(req.body).length === 0) {
-    res
-      .status(400)
-      .json({ status: false, message: "Request body is required" });
-    return;
-  }
   if (!req.user) {
     res
       .status(400)
@@ -462,9 +493,9 @@ export const resendEmailToken = async (
     
     const { ACTIVE_MAIL_SYSTEM } = process.env;
     const sendOTPEmail =(ACTIVE_MAIL_SYSTEM === "2")? await sendEmailSG(EmailOption): await sendMailNM(EmailOption);
-    res.status(201).json({ status: true, message: "Verification OTP sent" });
+    res.status(201).json({ status: true, message: "Verification OTP sent to your mail" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 };
@@ -558,7 +589,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       authToken: authToken,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 };
@@ -611,7 +642,7 @@ export const resetPasswordToken = async (
   }
 
 }
-//forgetPassword
+//forgetPassword user
 export const forgetPassword = async (req: Request, res: Response): Promise<void> => {
   if (!req.body || Object.keys(req.body).length === 0) {
     res
@@ -666,7 +697,7 @@ export const forgetPassword = async (req: Request, res: Response): Promise<void>
     res.status(200).json({ status: true, message: "OTP sent to your email" });
     
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ status: false, message: "Internal server error" });
     
   }
@@ -729,7 +760,7 @@ export const updatePhoneno = async(req: Request, res: Response): Promise<void> =
       //send sms code
 
     }catch(error){
-      console.log(error);
+      console.error(error);
       res.status(500).json({ status: false, message: "Internal server error" });
     }
 

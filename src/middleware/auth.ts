@@ -13,7 +13,10 @@ declare module "express" {
 
 export const checkToken = (req: any, res: any, next: any) => {
     if (!req.headers.authorization) {
-        return res.status(401).json({ error: 'No authourization token provided' });
+        return res.status(401).json({ 
+            status: false,
+            error: 'No authourization token provided' 
+        });
     }
     //work if frefix bearer exist or not
     let token : string = req.headers.authorization;
